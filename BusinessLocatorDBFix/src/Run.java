@@ -5,7 +5,7 @@ public class Run {
 		//new CsvToTable().fixCompanies();
 		//new TestDb().getBusinessForms();
 		//new CsvToTable().fixAddresses();
-		new CsvToTable().oldComps();
+		//new CsvToTable().oldComps();
 	}
 
 }
