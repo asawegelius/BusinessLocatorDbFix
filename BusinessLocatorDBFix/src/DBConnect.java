@@ -19,7 +19,7 @@ public class DBConnect {
 		try{		
 			Class.forName("com.mysql.jdbc.Driver");		
 			
-			String url = "jdbc:mysql://localhost/businesslocator";
+			String url = "jdbc:mysql://188.181.85.75/businesslocator";
 			String user = "locatorAdmin";
 			String pw = "!blDbpw1";
 			DBConnect.con = DriverManager.getConnection(url, user, pw);		
