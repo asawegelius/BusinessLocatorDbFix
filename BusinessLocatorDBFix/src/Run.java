@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+
 
 public class Run {
 
@@ -7,11 +7,8 @@ public class Run {
 		//new TestDb().getBusinessForms();
 		//new CsvToTable().fixAddresses();
 		//new CsvToTable().oldComps();
-		FixLatLong blob = new FixLatLong();
-		ArrayList<String> codes = blob.getCompCodeFromCompLoc();
-		System.out.println("no of codes = " + codes.size());
-		ArrayList<Integer> ids = blob.getCompIdsFromCompanies(codes);
-		System.out.println("no of ids = " + ids.size());
+		new CsvToTable().fixCompanyAddress();
+		//FixLatLong blob = new FixLatLong();
 	}
 
 }
