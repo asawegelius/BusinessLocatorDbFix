@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -174,16 +175,15 @@ public class CsvToTable {
 	}
 
 	public void fixCompanyAddress() {
-		Connection con = DBConnect.getConnection();
 		String csvFile = "file/company_address.txt";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ";";
-		String query1 = "select company_id from company where company_code ='";
-		String query2 = "select address_id from address where street='";
-		String query3 = "INSERT INTO company_address(`ca_company_id`,`ca_address_id`)VALUES (";
+		String query1 = "select company_id from company where company_code=? limit 1";
+		String query2 = "select address_id from address where street=? and district =? limit 1";
+		String query3 = "INSERT INTO `businesslocator`.`company_address`(`ca_company_id`,`ca_address_id`)VALUES(?,?)";
 		try {
-
+			Connection con = DBConnect.getConnection();
 			br = new BufferedReader(new FileReader(csvFile));
 			while ((line = br.readLine()) != null) {
 				String company_code = line.substring(0, line.indexOf(cvsSplitBy)).trim();
@@ -198,20 +198,28 @@ public class CsvToTable {
 				line = line.substring(line.indexOf(cvsSplitBy) + 1, line.length());
 				String street = line;
 				try {
-					Statement s = con.createStatement();
-					ResultSet rs = s.executeQuery(query1 + company_code + "' limit 1;");
+					PreparedStatement statement1 = con.prepareStatement(query1);
+					PreparedStatement statement2 = con.prepareStatement(query2);
+					PreparedStatement statement3 = con.prepareStatement(query3);
+					statement1.setString(1, company_code);
+					ResultSet rs = statement1.executeQuery();
 					if (rs.next()) {
 						int comp_id = rs.getInt("company_id");
-						ResultSet rs2 = s.executeQuery(query2 + street + "' and district ='" + district + "' limit 1;");
+						System.out.println("comp_id =" + comp_id);
+						statement3.setInt(1, comp_id);
+						statement2.setString(1, street);
+						statement2.setString(2, district);
+						ResultSet rs2 = statement2.executeQuery();
 						if (rs2.next()) {
 							int adr_id = rs2.getInt("address_id");
-							s.execute(query3 + comp_id + ", " + adr_id + ")");
+							statement3.setInt(2, adr_id);
+							System.out.println("adr_id =" + adr_id);
+							statement3.executeUpdate();
 						}
 					}
-					s.close();
 				} catch (SQLException e) {
 					System.err.println(e.getMessage());
-				}
+				} 
 			}
 		} catch (FileNotFoundException e) {
 

@@ -1,0 +1,8 @@
+10538688;5300;Kerteminde;Fåredammen 9
+10539048;9460;Brovst;Stagstedvej 33
+10539072;4900;Nakskov;Linkøpingvej 6
+10539137;5700;Svendborg;Lundbyvej 62 A
+10539412;5560;Aarup;Orte Byvej 16
+10539447;4040;Jyllinge;Snekkevej 17
+10539544;6818;Årre;Vesterled 18
+10539595;1550;København V;Rådhuspladsen 4
