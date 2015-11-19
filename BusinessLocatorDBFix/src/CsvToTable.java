@@ -238,4 +238,9 @@ public class CsvToTable {
 
 		System.out.println("Done");
 	}
+	
+	public void addBusinessFormIdToCompanies(){
+		String query1 = "";
+		String query2 = "";
+	}
 }

@@ -1,8 +1,13 @@
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeocodingApi;
+import com.google.maps.model.GeocodingResult;
 
 public class FixLatLong {
 
@@ -31,13 +36,13 @@ public class FixLatLong {
 	}
 
 	public ArrayList<FieldContainer> getCompIdsFromCompanies(ArrayList<FieldContainer> comp_codes) {
-		String query = "select company_id from company where company_code ='";
+		String query = "select company_id from company where company_code =? limit 1";
 		Connection con = DBConnect.getConnection();
 		try {
 			for (int i = 0; i < comp_codes.size(); i++) {
-				Statement s = con.createStatement();
-				String q = query + comp_codes.get(i).getCompCode() + "' limit 1;";
-				ResultSet rs = s.executeQuery(q);
+				PreparedStatement s = con.prepareStatement(query);
+				s.setString(1, comp_codes.get(i).getCompCode());
+				ResultSet rs = s.executeQuery();
 				if (rs.next()) {
 					comp_codes.get(i).setCompId(rs.getInt("company_id"));
 				}
@@ -51,13 +56,13 @@ public class FixLatLong {
 	}
 	
 	public ArrayList<FieldContainer> getAddressIdsForCompanies(ArrayList<FieldContainer> list){
-		String query = "select address_id from company_address where company_id ='";
+		String query = "select address_id from company_address where company_id =? limit 1";
 		Connection con = DBConnect.getConnection();
 		try {
 			for (int i = 0; i < list.size(); i++) {
-				Statement s = con.createStatement();
-				String q = query + list.get(i).getCompId() + "' limit 1;";
-				ResultSet rs = s.executeQuery(q);
+				PreparedStatement s = con.prepareStatement(query);
+				s.setInt(1, list.get(i).getCompId());
+				ResultSet rs = s.executeQuery();
 				if (rs.next()) {
 					list.get(i).setCompId(rs.getInt("address_id"));
 				}
@@ -69,6 +74,24 @@ public class FixLatLong {
 		}
 		return list;
 	}
+	
+	
+	public Double[] getLatLong(String address) {
+		GeoApiContext context = new GeoApiContext()
+				.setApiKey("AIzaSyAAdfFpqk9vHsZFN4z6-3oqVUVpNI8khTM");
+		GeocodingResult[] results = null;
+		Double[] coding = new Double[2];
+		try {
+			results = GeocodingApi.geocode(context, address).await();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		coding[0] = results[0].geometry.location.lat;
+		coding[1] = results[0].geometry.location.lng;
+		return coding;
+	}
+	
 	
 	public class FieldContainer{
 		String compCode;
