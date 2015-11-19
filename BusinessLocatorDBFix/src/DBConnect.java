@@ -17,8 +17,9 @@ public class DBConnect {
 	//Gets JDBC connection instance
 	private static void initConnection(){			
 		try{		
-			Class.forName("com.mysql.jdbc.Driver");		
-			
+			Class.forName("com.mysql.jdbc.Driver");	
+			//localhost
+			//188.181.85.75
 			String url = "jdbc:mysql://localhost/businesslocator";
 			String user = "locatorAdmin";
 			String pw = "!blDbpw1";

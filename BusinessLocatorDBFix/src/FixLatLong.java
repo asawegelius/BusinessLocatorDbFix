@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeocodingApi;
@@ -54,17 +55,20 @@ public class FixLatLong {
 		}
 		return comp_codes;
 	}
-	
-	public ArrayList<FieldContainer> getAddressIdsForCompanies(ArrayList<FieldContainer> list){
-		String query = "select address_id from company_address where company_id =? limit 1";
+
+	public ArrayList<FieldContainer> getAddressIdsForCompanies(ArrayList<FieldContainer> list) {
+		String query = "select ca_address_id from company_address where ca_company_id =? limit 1";
 		Connection con = DBConnect.getConnection();
 		try {
+			int found = 0;
 			for (int i = 0; i < list.size(); i++) {
 				PreparedStatement s = con.prepareStatement(query);
 				s.setInt(1, list.get(i).getCompId());
 				ResultSet rs = s.executeQuery();
 				if (rs.next()) {
-					list.get(i).setCompId(rs.getInt("address_id"));
+					found++;
+					System.out.println("number of found address ids is now " + found);
+					list.get(i).setAddressId(rs.getInt("ca_address_id"));
 				}
 				s.close();
 			}
@@ -74,11 +78,77 @@ public class FixLatLong {
 		}
 		return list;
 	}
-	
-	
+
+	public void addOldLatLongs() {
+		ArrayList<FieldContainer> foundComps = getCompCodeFromCompLoc();
+		ArrayList<FieldContainer> foundCompIds = getCompIdsFromCompanies(foundComps);
+		ArrayList<FieldContainer> foundaddrIds = getAddressIdsForCompanies(foundCompIds);
+		insertOldLatLongs(foundaddrIds);
+	}
+
+	public void insertOldLatLongs(ArrayList<FieldContainer> container) {
+		Connection connection = null;
+		ArrayList<FieldContainer> uniques = new ArrayList<FieldContainer>();
+		String query1 = "SELECT street,zip, district FROM address where address_id=?;";
+		String query2 = "INSERT INTO address_with_location(street,zip,district,lat,lng)VALUES(?,?,?,?,?);";
+		PreparedStatement pstmt = null;
+		PreparedStatement pstmt2 = null;
+
+		HashSet<Integer> addressIds = new HashSet<Integer>();
+		int setSize = addressIds.size();
+		for (FieldContainer c : container) {
+			System.out.println("the id is " + c.getAddressId());
+			if (c.getAddressId() > 0) {
+				addressIds.add(c.getAddressId());
+				if (setSize < addressIds.size()) {
+					uniques.add(c);
+				}
+				setSize = addressIds.size();
+			}
+		}
+		System.out.println("there were " + container.size() + " entries and unique ones were " + uniques.size());
+		try {
+			connection = DBConnect.getConnection();
+		} catch (Exception e) {
+			System.err.println("There was an error getting the connection");
+		}
+		try {
+			connection.setAutoCommit(false);
+			System.err.println("The autocommit was disabled!");
+		} catch (SQLException e) {
+			System.err.println("There was an error disabling autocommit");
+		}
+		for (FieldContainer cont : uniques) {
+			try {
+				pstmt = connection.prepareStatement(query1);
+				pstmt2 = connection.prepareStatement(query2);
+				pstmt.setInt(1, cont.getAddressId());
+				ResultSet rs = pstmt.executeQuery();
+				if (rs.next()) {
+					pstmt2.setString(1, rs.getString("street"));
+					pstmt2.setString(2, rs.getString("zip"));
+					pstmt2.setString(3, rs.getString("district"));
+					pstmt2.setFloat(4, cont.getLat());
+					pstmt2.setFloat(5, cont.getLng());
+					pstmt2.execute();
+					connection.commit();
+					System.err.println("The transaction was successfully executed");
+				}
+			} catch (SQLException e) {
+				try {
+					// We rollback the transaction, atomicity!
+					connection.rollback();
+					System.err.println(e.getMessage());
+					System.err.println("The transaction was rollback");
+				} catch (SQLException e1) {
+					System.err.println("There was an error making a rollback");
+				}
+			}
+		}
+	}
+
 	public Double[] getLatLong(String address) {
-		GeoApiContext context = new GeoApiContext()
-				.setApiKey("AIzaSyAAdfFpqk9vHsZFN4z6-3oqVUVpNI8khTM");
+		GeoApiContext context = new GeoApiContext().setApiKey("AIzaSyAAdfFpqk9vHsZFN4z6-3oqVUVpNI8khTM");
 		GeocodingResult[] results = null;
 		Double[] coding = new Double[2];
 		try {
@@ -91,75 +161,5 @@ public class FixLatLong {
 		coding[1] = results[0].geometry.location.lng;
 		return coding;
 	}
-	
-	
-	public class FieldContainer{
-		String compCode;
-		int compId;
-		int addressId;
-		float lat;
-		float lng;
-		
-		/**
-		 * @return the compCode
-		 */
-		public String getCompCode() {
-			return compCode;
-		}
-		/**
-		 * @param compCode the compCode to set
-		 */
-		public void setCompCode(String compCode) {
-			this.compCode = compCode;
-		}
-		/**
-		 * @return the compId
-		 */
-		public int getCompId() {
-			return compId;
-		}
-		/**
-		 * @param compId the compId to set
-		 */
-		public void setCompId(int compId) {
-			this.compId = compId;
-		}
-		/**
-		 * @return the addressId
-		 */
-		public int getAddressId() {
-			return addressId;
-		}
-		/**
-		 * @param addressId the addressId to set
-		 */
-		public void setAddressId(int addressId) {
-			this.addressId = addressId;
-		}
-		/**
-		 * @return the lat
-		 */
-		public float getLat() {
-			return lat;
-		}
-		/**
-		 * @param lat the lat to set
-		 */
-		public void setLat(float lat) {
-			this.lat = lat;
-		}
-		/**
-		 * @return the lng
-		 */
-		public float getLng() {
-			return lng;
-		}
-		/**
-		 * @param lng the lng to set
-		 */
-		public void setLng(float lng) {
-			this.lng = lng;
-		}
-		
-	}
+
 }
