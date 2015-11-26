@@ -219,7 +219,7 @@ public class CsvToTable {
 					}
 				} catch (SQLException e) {
 					System.err.println(e.getMessage());
-				} 
+				}
 			}
 		} catch (FileNotFoundException e) {
 
@@ -238,9 +238,50 @@ public class CsvToTable {
 
 		System.out.println("Done");
 	}
-	
-	public void addBusinessFormIdToCompanies(){
-		String query1 = "";
-		String query2 = "";
+
+	public void addCompanyAddressFromCsv() {
+		String csvFile = "file/company_address.txt";
+		BufferedReader br = null;
+		String line = "";
+		String cvsSplitBy = ";";
+		String query = "INSERT INTO `businesslocator`.`company_address`(`ca_company_id`,`ca_address_id`)VALUES(?,?)";
+		try {
+			Connection con = DBConnect.getConnection();
+			br = new BufferedReader(new FileReader(csvFile));
+			while ((line = br.readLine()) != null) {
+				// remove company_address_id from line
+				line = line.substring(line.indexOf(cvsSplitBy) + 1, line.length());
+				String comp_id = line.substring(0, line.indexOf(cvsSplitBy)).trim();
+				// remove district from line
+				line = line.substring(line.indexOf(cvsSplitBy) + 1, line.length());
+				String addr_id = line;
+				int company_id = new Integer(comp_id).intValue();
+				int address_id = new Integer(addr_id).intValue();
+				try {
+					PreparedStatement statement = con.prepareStatement(query);
+					statement.setInt(1, company_id);
+					statement.setInt(2, address_id);
+					statement.execute();
+				} catch (SQLException e) {
+					System.err.println(e.getMessage());
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		System.out.println("Done");
+	}
+
+	public void addBusinessFormIdToCompanies() {
 	}
 }
